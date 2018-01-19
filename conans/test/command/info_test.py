@@ -11,6 +11,20 @@ from conans.util.files import load
 
 class InfoTest(unittest.TestCase):
 
+    def failed_info_test(self):
+        client = TestClient()
+        conanfile = """from conans import ConanFile
+class Pkg(ConanFile):
+    requires = "Pkg/1.0.x@user/testing"
+"""
+        client.save({"conanfile.py": conanfile})
+        error = client.run("info .", ignore_error=True)
+        self.assertTrue(error)
+        self.assertIn("Pkg/1.0.x@user/testing: Not found in local cache", client.out)
+        client.run("search")
+        self.assertIn("There are no packages", client.out)
+        self.assertNotIn("Pkg/1.0.x@user/testing", client.out)
+
     def _create(self, number, version, deps=None, deps_dev=None, export=True):
         files = cpp_hello_conan_files(number, version, deps, build=False)
         files[CONANFILE] = files[CONANFILE].replace("config(", "configure(")
@@ -226,7 +240,7 @@ class MyTest(ConanFile):
         self.client.run("info ./subfolder")
         self.assertIn("Pkg/0.1@PROJECT", self.client.user_io.out)
 
-        self.client.run("info ./subfolder --build_order "
+        self.client.run("info ./subfolder --build-order "
                         "Pkg/0.1@lasote/testing --json=jsonfile.txt")
         path = os.path.join(self.client.current_folder, "jsonfile.txt")
         self.assertTrue(os.path.exists(path))
@@ -361,12 +375,12 @@ class MyTest(ConanFile):
         self.client.run("info . -bo=LibG/0.1@lasote/stable")
         self.assertEqual("\n", self.client.user_io.out)
 
-        self.client.run("info . --build_order=ALL")
+        self.client.run("info . --build-order=ALL")
         self.assertIn("[LibA/0.1@lasote/stable, LibE/0.1@lasote/stable, LibF/0.1@lasote/stable], "
                       "[LibB/0.1@lasote/stable, LibC/0.1@lasote/stable]",
                       self.client.user_io.out)
 
-        self.client.run("info . --build_order=ALL")
+        self.client.run("info . --build-order=ALL")
         self.assertIn("[LibA/0.1@lasote/stable, LibE/0.1@lasote/stable, "
                       "LibF/0.1@lasote/stable], [LibB/0.1@lasote/stable, LibC/0.1@lasote/stable]",
                       self.client.user_io.out)

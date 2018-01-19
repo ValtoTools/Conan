@@ -165,7 +165,7 @@ class ConanManager(object):
                                   manifest_manager=None)
 
         loader = self.get_loader(profile)
-        conanfile = loader.load_virtual([reference], None)
+        conanfile = loader.load_virtual([reference], scope_options=True)
         if install_folder and existing_info_files(install_folder):
             _load_deps_info(install_folder, conanfile, required=True)
 
@@ -209,6 +209,9 @@ class ConanManager(object):
         package = remote_proxy.search(reference, None)
         if not package:  # Search the reference first, and raise if it doesn't exist
             raise ConanException("'%s' not found in remote" % str(reference))
+
+        # First of all download package recipe
+        remote_proxy.get_recipe(reference)
 
         if package_ids:
             remote_proxy.download_packages(reference, package_ids)
@@ -347,8 +350,8 @@ class ConanManager(object):
 
         try:
             if cross_building(loader._settings):
-                build_os, _, host_os, _ = get_cross_building_settings(loader._settings)
-                message = "Cross-platform from '%s' to '%s'" % (build_os, host_os)
+                b_os, b_arch, h_os, h_arch = get_cross_building_settings(loader._settings)
+                message = "Cross-build from '%s:%s' to '%s:%s'" % (b_os, b_arch, h_os, h_arch)
                 self._user_io.out.writeln(message, Color.BRIGHT_MAGENTA)
         except ConanException:  # Setting os doesn't exist
             pass
@@ -424,7 +427,7 @@ class ConanManager(object):
                       install_folder):
         if package_folder == build_folder:
             raise ConanException("Cannot 'conan package' to the build folder. "
-                                 "--build_folder and package folder can't be the same")
+                                 "--build-folder and package folder can't be the same")
         output = ScopedOutput("PROJECT", self._user_io.out)
         conanfile = self._load_consumer_conanfile(conanfile_path, install_folder, output,
                                                   deps_info_required=True)
